@@ -9,7 +9,7 @@ This is a Django-based REST API for managing a collection of movies. The API all
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/movie-collection-api.git
+git clone git@github.com:hencydsouza/movie-api.git
 ```
     
 2. Navigate to the project directory:
