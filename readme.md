@@ -12,10 +12,20 @@ This is a Django-based REST API for managing a collection of movies. The API all
 git clone git@github.com:hencydsouza/movie-api.git
 ```
     
-2. Navigate to the project directory:
+2. Navigate to the root directory:
 
 ```bash
 cd movie-api
+```
+
+3. Install the required packages:
+
+```bash
+pip install -r requirements.txt
+```
+
+4. Navigate to the project directory
+```bash
 cd movie_collection_api
 ```
 
@@ -26,11 +36,6 @@ python -m venv venv
 venv\Scripts\activate
 ```
 
-4. Install the required packages:
-
-```bash
-pip install -r requirements.txt
-```
 ## Usage
 
 ```bash
