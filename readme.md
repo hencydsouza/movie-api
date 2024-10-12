@@ -62,10 +62,10 @@ python manage.py runserver
 | `username` | `string` | **Required**. Your username |
 | `password` | `string` | **Required**. Your password |
 
-#### Refreshtoken
+#### Refresh Token
 
 ```http
-  POST /api/token/
+  POST /api/token/refresh
 ```
 
 | Parameter | Type     | Description                |
