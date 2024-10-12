@@ -29,7 +29,7 @@ pip install -r requirements.txt
 cd movie_collection_api
 ```
 
-3. Create and activate a virtual environment:
+5. Create and activate a virtual environment:
 
 ```bash
 python -m venv venv
