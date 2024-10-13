@@ -19,25 +19,28 @@ class MovieSerializer(serializers.ModelSerializer):
         model = Movie
         fields = ['title', 'description', 'genres', 'uuid']  # Simple fields
 
-
-
 class CollectionSerializer(serializers.ModelSerializer):
-    movies = MovieSerializer(many=True, required=False)
+    movies = MovieSerializer(many=True)  # Use nested serializer
 
     class Meta:
         model = Collection
-        fields = ['title', 'description', 'movies', 'uuid']
+        fields = ['title', 'uuid', 'description', 'movies']
         read_only_fields = ['uuid']
 
     def create(self, validated_data):
+        # Pop movies data from the request
         movies_data = validated_data.pop('movies', [])
+        # Create the collection
         collection = Collection.objects.create(user=self.context['request'].user, **validated_data)
+        # Create movie instances
         for movie_data in movies_data:
             Movie.objects.create(collection=collection, **movie_data)
         return collection
 
     def update(self, instance, validated_data):
         movies_data = validated_data.pop('movies', None)
+
+        # Update collection fields
         instance.title = validated_data.get('title', instance.title)
         instance.description = validated_data.get('description', instance.description)
         instance.save()
@@ -47,4 +50,5 @@ class CollectionSerializer(serializers.ModelSerializer):
             instance.movies.all().delete()
             for movie_data in movies_data:
                 Movie.objects.create(collection=instance, **movie_data)
+
         return instance

@@ -14,6 +14,7 @@ from rest_framework import generics, permissions
 from .serializers import UserSerializer
 from rest_framework import status 
 from rest_framework import viewsets 
+from collections import Counter
 
 # Function to fetch movies from the external API
 def fetch_movies(page=1):
@@ -53,19 +54,6 @@ class MoviesListView(generics.ListAPIView):
         movies = fetch_movies(page)
         return Response(movies)
 
-class CollectionListView(generics.ListCreateAPIView):
-    queryset = Collection.objects.all()
-    serializer_class = CollectionSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-class CollectionDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Collection.objects.all()
-    serializer_class = CollectionSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
 class RequestCountView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -73,11 +61,22 @@ class RequestCountView(APIView):
         return JsonResponse({"requests": RequestCounterMiddleware.get_request_count()})
 
 class ResetRequestCountView(APIView):
-    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        RequestCounterMiddleware.request_count = 0
-        return JsonResponse({"message": "Request count reset successfully"})
+        """
+        Reset the global request count.
+        """
+        try:
+            RequestCounterMiddleware.reset_count()
+            return Response(
+                {"message": "Request count has been reset."},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {"error": "Failed to reset request count."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
 class CollectionViewSet(viewsets.ModelViewSet):
     serializer_class = CollectionSerializer
@@ -86,3 +85,31 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Collection.objects.filter(user=self.request.user)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        collections = serializer.data
+
+        # Aggregate genres from all movies in user's collections
+        genres = []
+        for collection in queryset:
+            for movie in collection.movies.all():
+                # Assuming genres are stored as comma-separated strings
+                genres.extend([genre.strip() for genre in movie.genres.split(',')])
+
+        if genres:
+            # Count genres and get top 3
+            genre_counts = Counter(genres)
+            top_genres = genre_counts.most_common(3)
+            favorite_genres = ', '.join([genre for genre, count in top_genres])
+        else:
+            favorite_genres = "No favorite genres yet."
+
+        return Response({
+            "is_success": True,
+            "data": {
+                "collections": collections,
+                "favourite_genres": favorite_genres
+            }
+        }, status=status.HTTP_200_OK)
