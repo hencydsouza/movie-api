@@ -1,11 +1,25 @@
 from django.utils.deprecation import MiddlewareMixin
+import threading
 
-class RequestCounterMiddleware(MiddlewareMixin):
-    request_count = 0
+class RequestCounterMiddleware:
+    counter = 0
+    lock = threading.Lock()
 
-    def process_request(self, request):
-        RequestCounterMiddleware.request_count += 1
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        with self.lock:
+            RequestCounterMiddleware.counter += 1
+        response = self.get_response(request)
+        return response
 
     @classmethod
     def get_request_count(cls):
-        return cls.request_count
+        with cls.lock:
+            return cls.counter
+
+    @classmethod
+    def reset_count(cls):
+        with cls.lock:
+            cls.counter = 0

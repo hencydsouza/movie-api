@@ -17,11 +17,34 @@ class UserSerializer(serializers.ModelSerializer):
 class MovieSerializer(serializers.ModelSerializer):
     class Meta:
         model = Movie
-        fields = '__all__'
+        fields = ['title', 'description', 'genres', 'uuid']  # Simple fields
+
+
 
 class CollectionSerializer(serializers.ModelSerializer):
-    movies = MovieSerializer(many=True)
+    movies = MovieSerializer(many=True, required=False)
 
     class Meta:
         model = Collection
-        fields = '__all__'
+        fields = ['title', 'description', 'movies', 'uuid']
+        read_only_fields = ['uuid']
+
+    def create(self, validated_data):
+        movies_data = validated_data.pop('movies', [])
+        collection = Collection.objects.create(user=self.context['request'].user, **validated_data)
+        for movie_data in movies_data:
+            Movie.objects.create(collection=collection, **movie_data)
+        return collection
+
+    def update(self, instance, validated_data):
+        movies_data = validated_data.pop('movies', None)
+        instance.title = validated_data.get('title', instance.title)
+        instance.description = validated_data.get('description', instance.description)
+        instance.save()
+
+        if movies_data is not None:
+            # Clear existing movies and add new ones
+            instance.movies.all().delete()
+            for movie_data in movies_data:
+                Movie.objects.create(collection=instance, **movie_data)
+        return instance

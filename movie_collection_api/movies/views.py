@@ -13,6 +13,7 @@ from django.contrib.auth.models import User
 from rest_framework import generics, permissions
 from .serializers import UserSerializer
 from rest_framework import status 
+from rest_framework import viewsets 
 
 # Function to fetch movies from the external API
 def fetch_movies(page=1):
@@ -77,3 +78,11 @@ class ResetRequestCountView(APIView):
     def post(self, request):
         RequestCounterMiddleware.request_count = 0
         return JsonResponse({"message": "Request count reset successfully"})
+    
+class CollectionViewSet(viewsets.ModelViewSet):
+    serializer_class = CollectionSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'uuid'
+
+    def get_queryset(self):
+        return Collection.objects.filter(user=self.request.user)
